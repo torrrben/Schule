@@ -74,6 +74,30 @@
         }
 
         .bubble { 
+.delete-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: none; /* Standardmäßig versteckt */
+    border: 1px solid white;
+}
+
+/* Zeige das X nur, wenn die Blase nicht gerade bewegt wird */
+.bubble:hover .delete-btn, .bubble:focus-within .delete-btn {
+    display: block;
+}
+
+            
             position: absolute; 
             cursor: move; 
             padding: 12px 18px; 
@@ -127,7 +151,7 @@
     </div>
 
     <p class="hint">
-        <b>Bedienung:</b> Blasen ziehen zum Bewegen | Tippen zum Schreiben | Doppeltippen zum Löschen. <br>
+        <b>Bedienung:</b> Blasen ziehen zum Bewegen | Tippen zum Schreiben | <br>
         <i>Wichtig: Am iPad für Text-Eingabe erst die Blase positionieren, dann tippen.</i>
     </p>
 
@@ -189,3 +213,4 @@
     </script>
 </body>
 </html>
+
