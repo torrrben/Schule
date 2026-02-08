@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Was würden die Menschen sagen?</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #27ae60;
+            --bg-color: #f4f7f6;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background: var(--bg-color);
+            touch-action: manipulation; /* Verbessert Reaktionszeit auf Tablets */
+        }
+
+        header {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .controls { 
+            margin: 20px; 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button { 
+            padding: 12px 24px; 
+            font-size: 16px;
+            cursor: pointer; 
+            background: white; 
+            color: var(--primary-color); 
+            border: 2px solid var(--primary-color); 
+            border-radius: 8px; 
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        button.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        #canvas-container { 
+            position: relative; 
+            border: 2px solid #ccc; 
+            background: #fff; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 95vw;
+            overflow: hidden;
+        }
+
+        #bgImage { 
+            display: block; 
+            max-width: 100%; 
+            height: auto; 
+            pointer-events: none; /* Verhindert, dass das Bild markiert wird */
+        }
+
+        .bubble { 
+            position: absolute; 
+            cursor: move; 
+            padding: 12px 18px; 
+            background: white; 
+            border: 2px solid black; 
+            border-radius: 25px; 
+            min-width: 100px; 
+            max-width: 250px;
+            font-size: 16px;
+            line-height: 1.4;
+            z-index: 100;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            outline: none;
+        }
+
+        /* Der Sprechblasen-Pfeil */
+        .bubble::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: -15px; 
+            left: 30px; 
+            border-width: 15px 15px 0; 
+            border-style: solid; 
+            border-color: black transparent; 
+        }
+
+        .bubble:focus { border-color: var(--accent-color); }
+
+        .hint { 
+            margin-top: 20px; 
+            font-size: 0.9em; 
+            color: #7f8c8d; 
+            max-width: 80%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Was würden die Menschen sagen?</h1>
+    </header>
+    
+    <div class="controls">
+        <button class="primary" onclick="addBubble()">+ Sprechblase</button>
+        <button onclick="window.print()">Ergebnis speichern (PDF)</button>
+    </div>
+
+    <div id="canvas-container">
+        <img id="bgImage" src="https://upload.wikimedia.org/wikipedia/commons/1/17/%22Der_Streik%22_von_Robert_Koehler.jpg" alt="Analysebild">
+    </div>
+
+    <p class="hint">
+        <b>Bedienung:</b> Blasen ziehen zum Bewegen | Tippen zum Schreiben | Doppeltippen zum Löschen. <br>
+        <i>Wichtig: Am iPad für Text-Eingabe erst die Blase positionieren, dann tippen.</i>
+    </p>
+
+    <script>
+        const container = document.getElementById('canvas-container');
+
+        function addBubble() {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.contentEditable = true;
+            bubble.innerText = 'Hier Text...';
+            bubble.style.left = '20px';
+            bubble.style.top = '20px';
+
+            const startMove = (e) => {
+                // Wenn wir schon im Text-Edit-Modus sind, nicht verschieben
+                if (document.activeElement === bubble) return;
+
+                const isTouch = e.type === 'touchstart';
+                const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+                const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+                const rect = bubble.getBoundingClientRect();
+                const shiftX = clientX - rect.left;
+                const shiftY = clientY - rect.top;
+
+                const onMove = (event) => {
+                    // Verhindert Scrollen beim Ziehen am iPad
+                    if (event.cancelable) event.preventDefault();
+
+                    const moveX = isTouch ? event.touches[0].clientX : event.clientX;
+                    const moveY = isTouch ? event.touches[0].clientY : event.clientY;
+
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    bubble.style.left = (moveX - containerRect.left - shiftX) + 'px';
+                    bubble.style.top = (moveY - containerRect.top - shiftY) + 'px';
+                };
+
+                const stopMove = () => {
+                    document.removeEventListener(isTouch ? 'touchmove' : 'mousemove', onMove);
+                    document.removeEventListener(isTouch ? 'touchend' : 'mouseup', stopMove);
+                };
+
+                document.addEventListener(isTouch ? 'touchmove' : 'mousemove', onMove, { passive: false });
+                document.addEventListener(isTouch ? 'touchend' : 'mouseup', stopMove);
+            };
+
+            bubble.addEventListener('mousedown', startMove);
+            bubble.addEventListener('touchstart', startMove, { passive: false });
+
+            // Löschen bei Doppelklick / Doppeltippen
+            bubble.addEventListener('dblclick', () => {
+                if(confirm('Sprechblase wirklich löschen?')) bubble.remove();
+            });
+
+            container.appendChild(bubble);
+        }
+    </script>
+</body>
+</html>
